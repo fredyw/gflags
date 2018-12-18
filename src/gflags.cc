@@ -617,6 +617,7 @@ void CommandLineFlag::FillCommandLineFlagInfo(
   result->is_default = !modified_;
   result->has_validator_fn = validate_function() != NULL;
   result->flag_ptr = flag_ptr();
+  result->hidden = Hidden();
 }
 
 void CommandLineFlag::UpdateModifiedBit() {
@@ -714,7 +715,8 @@ class FlagRegistry {
  private:
   friend class GFLAGS_NAMESPACE::FlagSaverImpl;  // reads all the flags in order to copy them
   friend class CommandLineFlagParser;    // for ValidateUnmodifiedFlags
-  friend void GFLAGS_NAMESPACE::GetAllFlags(vector<CommandLineFlagInfo>*);
+  friend void GFLAGS_NAMESPACE::GetAllFlags(vector<CommandLineFlagInfo>*,
+                                            bool show_modified_hidden);
 
   // The map from name to flag, for FindFlagLocked().
   typedef map<const char*, CommandLineFlag*, StringCmp> FlagMap;
@@ -1524,12 +1526,13 @@ struct FilenameFlagnameCmp {
   }
 };
 
-void GetAllFlags(vector<CommandLineFlagInfo>* OUTPUT) {
+void GetAllFlags(vector<CommandLineFlagInfo>* OUTPUT, bool show_modified_hidden) {
   FlagRegistry* const registry = FlagRegistry::GlobalRegistry();
   registry->Lock();
   for (FlagRegistry::FlagConstIterator i = registry->flags_.begin();
        i != registry->flags_.end(); ++i) {
-    if (i->second->Hidden()) continue;
+    // Only show the hidden flag when show_modified_hidden is true and the flag was modified.
+    if (i->second->Hidden() && !(show_modified_hidden && i->second->Modified())) continue;
     CommandLineFlagInfo fi;
     i->second->FillCommandLineFlagInfo(&fi);
     OUTPUT->push_back(fi);
@@ -1817,9 +1820,9 @@ static string TheseCommandlineFlagsIntoString(
   return retval;
 }
 
-string CommandlineFlagsIntoString() {
+string CommandlineFlagsIntoString(bool show_modified_hidden) {
   vector<CommandLineFlagInfo> sorted_flags;
-  GetAllFlags(&sorted_flags);
+  GetAllFlags(&sorted_flags, show_modified_hidden);
   return TheseCommandlineFlagsIntoString(sorted_flags);
 }
 

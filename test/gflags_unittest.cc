@@ -125,6 +125,7 @@ DEFINE_string(unused_string, "unused", "");
 // These flags are used by gflags_unittest.sh
 DEFINE_bool(changed_bool1, false, "changed");
 DEFINE_bool(changed_bool2, false, "changed");
+DEFINE_bool_hidden(changed_bool_hidden, false, "changed");
 DEFINE_bool(long_helpstring, false,
             "This helpstring goes on forever and ever and ever and ever and "
             "ever and ever and ever and ever and ever and ever and ever and "
@@ -898,6 +899,30 @@ TEST(GetAllFlagsTest, BaseTest) {
   EXPECT_TRUE(found_test_bool);
 }
 
+TEST(GetAllHiddenFlagsTest, BaseTest) {
+  vector<CommandLineFlagInfo> flags;
+  GetAllFlags(&flags, true);
+  bool found_test_bool = false;
+  bool found_test_bool_hidden = false;
+  bool found_changed_bool_hidden = false;
+  vector<CommandLineFlagInfo>::const_iterator i;
+  for (i = flags.begin(); i != flags.end(); ++i) {
+    if (i->name == "test_bool") {
+      found_test_bool = true;
+      EXPECT_EQ(i->type, "bool");
+      EXPECT_EQ(i->default_value, "false");
+      EXPECT_EQ(i->flag_ptr, &FLAGS_test_bool);
+    } else if (i->name == "test_bool_hidden") {
+      found_test_bool_hidden = true;
+    } else if (i->name == "changed_bool_hidden") {
+      found_changed_bool_hidden = true;
+    }
+  }
+  EXPECT_TRUE(found_test_bool);
+  EXPECT_FALSE(found_test_bool_hidden);
+  EXPECT_TRUE(found_changed_bool_hidden);
+}
+
 TEST(HiddenFlagsInFlagFileTest, BaseTest) {
   string flags("--test_bool_hidden=true\n");
   EXPECT_TRUE(ReadFlagsFromString(flags,
@@ -1558,6 +1583,7 @@ static int main(int argc, char **argv) {
   // Modify flag values from declared default value in two ways.
   // The recommended way:
   SetCommandLineOptionWithMode("changed_bool1", "true", SET_FLAGS_DEFAULT);
+  SetCommandLineOptionWithMode("changed_bool_hidden", "true", SET_FLAGS_VALUE);
 
   // The non-recommended way:
   FLAGS_changed_bool2 = true;

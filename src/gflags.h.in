@@ -164,6 +164,7 @@ struct CommandLineFlagInfo {
                                // has not been set explicitly from the cmdline
                                // or via SetCommandLineOption
   const void* flag_ptr;        // pointer to the flag's current value (i.e. FLAGS_foo)
+  bool hidden;                 // a hidden flag
 };
 
 // Using this inside of a validator is a recipe for a deadlock.
@@ -171,7 +172,8 @@ struct CommandLineFlagInfo {
 // call validators during ParseAllFlags.
 // Also make sure then to uncomment the corresponding unit test in
 // gflags_unittest.sh
-extern GFLAGS_DLL_DECL void GetAllFlags(std::vector<CommandLineFlagInfo>* OUTPUT);
+extern GFLAGS_DLL_DECL void GetAllFlags(std::vector<CommandLineFlagInfo>* OUTPUT,
+                                        bool show_modified_hidden=false);
 // These two are actually defined in gflags_reporting.cc.
 extern GFLAGS_DLL_DECL void ShowUsageWithFlags(const char *argv0);  // what --help does
 extern GFLAGS_DLL_DECL void ShowUsageWithFlagsRestrict(const char *argv0, const char *restrict);
@@ -291,7 +293,7 @@ class GFLAGS_DLL_DECL FlagSaver {
 // Some deprecated or hopefully-soon-to-be-deprecated functions.
 
 // This is often used for logging.  TODO(csilvers): figure out a better way
-extern GFLAGS_DLL_DECL std::string CommandlineFlagsIntoString();
+extern GFLAGS_DLL_DECL std::string CommandlineFlagsIntoString(bool show_modified_hidden=true);
 // Usually where this is used, a FlagSaver should be used instead.
 extern GFLAGS_DLL_DECL
 bool ReadFlagsFromString(const std::string& flagfilecontents,
